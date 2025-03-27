@@ -1,0 +1,17 @@
+*
+
+!/app/
+!/app/**
+
+!/config/
+!/config/**
+
+!/public/
+!/public/**
+
+!.gitignore
+
+*.env
+*.idea
+*.xml
+*.iml
