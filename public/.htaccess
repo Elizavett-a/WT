@@ -1,0 +1,9 @@
+RewriteEngine On
+RewriteBase /bookstore/public/
+
+# Если запрос не является файлом
+RewriteCond %{REQUEST_FILENAME} !-f
+# Если запрос не является директорией
+RewriteCond %{REQUEST_FILENAME} !-d
+# Перенаправляем все запросы на index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
