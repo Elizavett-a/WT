@@ -2,30 +2,26 @@
 <html>
 <head>
     <title>{{ book.title }}</title>
-    <style>
-        .book-details {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .book-cover {
-            max-width: 300px;
-            float: left;
-            margin-right: 20px;
-        }
-        .book-info {
-            overflow: hidden;
-        }
-    </style>
+    <link rel="stylesheet" href="/bookstore/public/assets/css/styles_view.css">
+    <!-- Подключаем иконки Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 <div class="book-details">
-    <img src="/assets/images/{{ book.cover }}" alt="{{ book.title }}" class="book-cover">
+    <img src="/bookstore/public/assets/images/{{ book.cover }}"
+         class="book-cover"
+         onerror="this.onerror=null; this.src='/bookstore/public/assets/images/noImage2.png'">
     <div class="book-info">
-        <h1>{{ book.title }}</h1>
-        <p><strong>Автор:</strong> {{ book.author }}</p>
-        <p><strong>Цена:</strong> {{ book.price }} $</p>
-        <a href="/books">← Вернуться к списку</a>
+        <h3 class="book-title">{{ book.title }}</h3>
+        <span class="book-author">{{ book.author }}</span>
+        <div class="price">{{ book.price }} $</div>
+        <div class="action-buttons">
+            <a href="/bookstore/public/books/edit/{{ book.id }}" class="edit-link">Редактировать</a>
+            <!--<a href="/bookstore/public/books/delete/{{ book.id }}" class="delete-link" title="Удалить">
+                <i class="fas fa-trash-alt"></i>
+            </a>-->
+            <a href="/bookstore/public/books" class="back-link">Вернуться к списку</a>
+        </div>
     </div>
     <div style="clear: both;"></div>
 </div>

@@ -1,0 +1,15 @@
+<IfModule mod_authz_core.c>
+    AuthType Basic
+    AuthName "Admin Area"
+    AuthUserFile /var/www/bookstore/config/.htpasswd
+    Require valid-user
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /bookstore/public/admin/
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>

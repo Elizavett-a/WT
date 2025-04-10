@@ -1,0 +1,253 @@
+:root {
+    --primary-color: #4a90e2;
+    --secondary-color: #9013fe;
+    --accent-color: #ff6b6b;
+    --edit-color: #6c757d;
+    --text-color: #333;
+    --light-gray: #f8f9fa;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+/* Стили для страницы книги */
+.book-details {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.book-details:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+.book-details::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    opacity: 1;
+}
+
+/* Стили обложки книги */
+.book-cover {
+    max-width: 300px;
+    width: 100%;
+    height: auto;
+    float: left;
+    margin-right: 2rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.book-cover:hover {
+    transform: scale(1.02);
+}
+
+/* Стили информации о книге */
+.book-info {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.book-title {
+    font-size: 1.8rem;
+    margin: 0 0 0.5rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.book-author {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    font-weight: 400;
+}
+
+.price {
+    color: var(--accent-color);
+    font-weight: 700;
+    font-size: 1.4rem;
+    margin: 0.5rem 0 1.5rem;
+    display: inline-block;
+    background: rgba(255, 107, 107, 0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    align-self: flex-start;
+}
+
+/* Стили кнопки "Вернуться к списку" */
+.back-link {
+    display: inline-block;
+    margin-top: auto;
+    padding: 10px 25px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white !important;
+    text-decoration: none;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(74, 144, 226, 0.3);
+    border: none;
+    cursor: pointer;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.back-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(74, 144, 226, 0.4);
+    opacity: 0.9;
+}
+
+.back-link:active {
+    transform: translateY(0);
+}
+
+/* Очистка float */
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.action-buttons {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Общие стили для кнопок */
+.back-link,
+.edit-link {
+    display: inline-block;
+    padding: 10px 25px;
+    text-decoration: none;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+    box-sizing: border-box;
+}
+
+/* Стиль кнопки "Редактировать" */
+.edit-link {
+    background: var(--edit-color);
+    color: white !important;
+    box-shadow: 0 1px 0px rgba(108, 117, 125, 0.3);
+}
+
+.edit-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(108, 117, 125, 0.4);
+    opacity: 0.9;
+    background: #5a6268;
+}
+
+/* Стиль кнопки "Вернуться" */
+.back-link {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white !important;
+    box-shadow: 0 2px 5px rgba(74, 144, 226, 0.3);
+}
+
+.back-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(74, 144, 226, 0.4);
+    opacity: 0.9;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    /* ... (остальные медиа-запросы остаются без изменений) ... */
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .back-link,
+    .edit-link {
+        width: 100%;
+        padding: 12px;
+    }
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .book-details {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+
+    .book-cover {
+        float: none;
+        display: block;
+        margin: 0 auto 1.5rem;
+        max-width: 100%;
+    }
+
+    .book-info {
+        display: block;
+    }
+
+    .book-title {
+        font-size: 1.5rem;
+    }
+
+    .price {
+        font-size: 1.2rem;
+        margin: 1rem 0;
+    }
+
+    .back-link {
+        width: 100%;
+        padding: 12px;
+        margin-top: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .book-details {
+        padding: 1.2rem;
+    }
+
+    .book-title {
+        font-size: 1.3rem;
+    }
+
+    .price {
+        font-size: 1.1rem;
+        padding: 6px 12px;
+    }
+}}
+

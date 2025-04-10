@@ -72,7 +72,7 @@ class Router {
                 new \App\Services\TemplateEngine()
             );
 
-            $id !== null ? $controller->$action($id) : $controller->$action();
+            $id !== null ? $controller->$action((int)$id) : $controller->$action();
 
         } catch (\Exception $e) {
             error_log("Controller error: " . $e->getMessage());

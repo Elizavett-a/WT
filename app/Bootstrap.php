@@ -1,4 +1,5 @@
 <?php
+
 // Автозагрузка классов с поддержкой PSR-4
 spl_autoload_register(function ($class) {
     $prefix = 'App\\';
