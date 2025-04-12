@@ -27,5 +27,5 @@ return [
     '/admin/{action}' => [
         'controller' => 'AdminController',
         'action' => 'handleRequest'
-    ]
+    ],
 ];

@@ -152,7 +152,7 @@ class TemplateEngine
         foreach ($vars as $var) {
             $value = $this->getVariableValue($var, $data);
             $result[] = "$var: " . print_r($value, true);
-        }
+        };
 
         return '<pre>'.htmlspecialchars(implode("\n", $result)).'</pre>';
     }

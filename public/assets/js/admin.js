@@ -89,7 +89,7 @@ document.getElementById('editForm').addEventListener('submit', function(e) {
         if (response.ok) {
             hideModal('editModal');
         } else {
-            alert('Error saving file');
+            alert('Error saving file');;
         }
     });
 });
