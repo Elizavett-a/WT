@@ -10,7 +10,6 @@ vendor/*
 /templates/cache/
 /templates/compiled/
 /public/assets/images/
-*/public/admin/*.htaccess
 composer.lock
 *.bak
 *.tmp
