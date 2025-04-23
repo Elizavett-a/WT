@@ -1,4 +1,5 @@
 .env
+.htpasswd
 php_errors.log
 .DS_Store
 Thumbs.db
