@@ -9,7 +9,6 @@ vendor/*
 *.swo
 /templates/cache/
 /templates/compiled/
-/public/assets/
 /public/images/
 composer.lock
 *.bak
