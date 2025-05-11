@@ -28,8 +28,6 @@ class EntityManager {
         $this->pdo->commit();
     }
 
-
-
     public function lastInsertId(): string {
         return $this->pdo->lastInsertId();
     }
