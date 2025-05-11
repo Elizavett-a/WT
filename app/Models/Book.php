@@ -1,34 +1,51 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Models;
 
 class Book {
-    private mixed $id;
-    private mixed $title;
-    private mixed $author;
-    private mixed $cover;
-    private mixed $price;
-    private mixed $category_id;
+    private ?int $id;
+    private string $title;
+    private string $author;
+    private string $cover;
+    private float $price;
+    private string $createdAt;
+    private string $updatedAt;
+
+    private array $categories = [];
+
+    private array $users = [];
 
     public function __construct(array $data = []) {
         $this->id = $data['id'] ?? null;
-        $this->title = $data['title'] ?? '';
-        $this->author = $data['author'] ?? '';
-        $this->cover = $data['cover'] ?? 'noImage2.png';
-        $this->price = $data['price'] ?? 0.0;
-        $this->category_id = $data['category_id'] ?? null;
+        $this->title = (string)($data['title'] ?? '');
+        $this->author = (string)($data['author'] ?? '');
+        $this->cover = (string)($data['cover'] ?? 'noImage2.png');
+        $this->price = isset($data['price']) ? (float)$data['price'] : 0.0;
+        $this->createdAt = (string)($data['created_at'] ?? date('Y-m-d H:i:s'));
+        $this->updatedAt = (string)($data['updated_at'] ?? date('Y-m-d H:i:s'));
     }
 
     public function toArray(): array {
-        return [
+        $data = [
             'id' => $this->id,
             'title' => $this->title,
             'author' => $this->author,
             'cover' => $this->cover,
             'price' => $this->price,
-            'category_id' => $this->category_id
+            'created_at' => $this->createdAt,
+            'updated_at' => $this->updatedAt
         ];
+
+        if (!empty($this->categories)) {
+            $data['categories'] = array_map(fn($c) => $c->getId(), $this->categories);
+        }
+
+        if (!empty($this->users)) {
+            $data['users'] = array_map(fn($u) => $u->getId(), $this->users);
+        }
+
+        return $data;
     }
 
     public function getId(): ?int {
@@ -47,13 +64,24 @@ class Book {
         return $this->cover;
     }
 
-    public function getPrice(): float
-    {
-        return (float)$this->price;
+    public function getPrice(): float {
+        return $this->price;
     }
 
-    public function getCategoryId(): ?int {
-        return $this->category_id;
+    public function getCreatedAt(): string {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): string {
+        return $this->updatedAt;
+    }
+
+    public function getCategories(): array {
+        return $this->categories;
+    }
+
+    public function getUsers(): array {
+        return $this->users;
     }
 
     public function setId(?int $id): self {
@@ -76,13 +104,34 @@ class Book {
         return $this;
     }
 
-    public function setPrice($price): void
-    {
-        $this->price = (float)$price;
+    public function setPrice(float $price): self {
+        $this->price = $price;
+        return $this;
     }
 
-    public function setCategoryId(?int $category_id): self {
-        $this->category_id = $category_id;
+    public function setCreatedAt(string $createdAt): self {
+        $this->createdAt = $createdAt;
         return $this;
+    }
+
+    public function setUpdatedAt(string $updatedAt): self {
+        $this->updatedAt = $updatedAt;
+        return $this;
+    }
+
+    public function addCategory(Category $category): void {
+        $this->categories[] = $category;
+    }
+
+    public function addUser(User $user): void {
+        $this->users[] = $user;
+    }
+
+    public function clearCategories(): void {
+        $this->categories = [];
+    }
+
+    public function clearUsers(): void {
+        $this->users = [];
     }
 }

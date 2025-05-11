@@ -15,12 +15,24 @@ class BookService {
 
     public function getBookById(int $id): ?Book
     {
-        return $this->bookRepo->findById((int)$id);
+        $book = $this->bookRepo->findById($id);
+
+        if ($book) {
+            $this->bookRepo->loadCategories($book);
+        }
+
+        return $book;
     }
 
     public function getAllBooks(): array
     {
-        return $this->bookRepo->findAll();
+        $books = $this->bookRepo->findAllWithCategories();
+
+        foreach ($books as $book) {
+            $this->bookRepo->loadCategories($book);
+        }
+
+        return $books;
     }
 
     public function updateBook(int $id, array $data): void

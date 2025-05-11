@@ -3,6 +3,27 @@
 <head>
     <title>Список книг</title>
     <link rel="stylesheet" href="/bookstore/public/assets/css/list.css">
+    <style>
+        .categories-container {
+            margin: 8px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .category-tag {
+            background: #e0e0e0;
+            color: #333;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .debug-info {
+            color: #999;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+    </style>
 </head>
 <body>
 <header>

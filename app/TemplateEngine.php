@@ -3,10 +3,14 @@ namespace App;
 
 class TemplateEngine
 {
-    private const BLOCK_REGEX = '/\{%\s*for\s+(\w+)\s+in\s+(\w+)\s*%\}(.*?)\{%\s*endfor\s*%\}/s';
+    private const BLOCK_REGEX = '/\{%\s*for\s+(\w+)\s+in\s+([\w\.\(\)]+)\s*%\}(.*?)\{%\s*endfor\s*%\}/s';
     private const IF_REGEX = '/\{%\s*if\s+(.+?)\s*%\}(.*?)(?:\{%\s*else\s*%\}(.*?))?\{%\s*endif\s*%\}/s';
-    private const VAR_REGEX = '/\{\{\s*([^\|]+?)(?:\s*\|\s*([^\}]+))?\s*\}\}/';
+    private const VAR_REGEX = '/\{\{\s*([^\|\}]+?)(?:\s*\|\s*([^\}]+))?\s*\}\}/';
     private const CONDITION_PATTERN = '/^(.+?)\s*(==|!=)\s*(.+)$/';
+
+    private const PROCESS_IF_CONDITIONS = 'processIfConditions';
+    private const PROCESS_FOR_LOOPS = 'processForLoops';
+    private const PROCESS_VARIABLES = 'processVariables';
 
     private array $blocks = [];
 
@@ -16,9 +20,9 @@ class TemplateEngine
         $content = file_get_contents($fullPath);
 
         $processingOrder = [
-            'processIfConditions',
-            'processForLoops',
-            'processVariables'
+            self::PROCESS_IF_CONDITIONS,
+            self::PROCESS_FOR_LOOPS,
+            self::PROCESS_VARIABLES
         ];
 
         foreach ($processingOrder as $method) {
@@ -67,12 +71,14 @@ class TemplateEngine
                 $itemsKey = $matches[2];
                 $template = $matches[3];
 
-                if (!isset($data[$itemsKey])) {
+                $items = $this->getVariableValue($itemsKey, $data);
+
+                if (!is_iterable($items)) {
                     return '';
                 }
 
                 $result = '';
-                foreach ($data[$itemsKey] as $item) {
+                foreach ($items as $item) {
                     $result .= $this->renderTemplatePart($template, $itemName, $item);
                 }
 
@@ -88,7 +94,6 @@ class TemplateEngine
             self::VAR_REGEX,
             function($matches) use ($itemName, $item) {
                 $varPath = $matches[1];
-                $filters = isset($matches[2]) ? explode('|', $matches[2]) : [];
 
                 if (str_starts_with($varPath, "$itemName.")) {
                     $property = substr($varPath, strlen($itemName) + 1);
@@ -96,11 +101,6 @@ class TemplateEngine
                 } else {
                     $value = $this->extractValue($item, $varPath);
                 }
-
-                foreach ($filters as $filter) {
-                    $value = $this->applyFilter(trim($filter), $value);
-                }
-
                 return htmlspecialchars((string)$value);
             },
             $template
@@ -113,12 +113,7 @@ class TemplateEngine
             self::VAR_REGEX,
             function($matches) use ($data) {
                 $varPath = $matches[1];
-                $filters = isset($matches[2]) ? explode('|', $matches[2]) : [];
                 $value = $this->getVariableValue($varPath, $data);
-
-                foreach ($filters as $filter) {
-                    $value = $this->applyFilter(trim($filter), $value);
-                }
 
                 return htmlspecialchars((string)$value);
             },
@@ -174,13 +169,5 @@ class TemplateEngine
             return $context[$property];
         }
         return null;
-    }
-
-    private function applyFilter(string $filter, $value): string
-    {
-        return match ($filter) {
-            'escape' => htmlspecialchars((string)$value),
-            default => $value,
-        };
     }
 }
