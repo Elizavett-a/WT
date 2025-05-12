@@ -26,13 +26,7 @@ class BookService {
 
     public function getAllBooks(): array
     {
-        $books = $this->bookRepo->findAllWithCategories();
-
-        foreach ($books as $book) {
-            $this->bookRepo->loadCategories($book);
-        }
-
-        return $books;
+        return $this->bookRepo->findAllWithCategories();
     }
 
     public function updateBook(int $id, array $data): void
