@@ -2,7 +2,7 @@
 <html>
 <head>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <title>Login</title>
+    <title>Вход</title>
 </head>
 <body>
 <div class="auth-container">
