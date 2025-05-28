@@ -30,7 +30,6 @@ class AdminController extends BaseController
                 $this->showFile($fullPath, $path);
             }
         } catch (\Throwable $e) {
-            // Handle error
         }
     }
 
@@ -87,7 +86,6 @@ class AdminController extends BaseController
                 'files' => $files,
             ]);
         } catch (\Throwable $e) {
-            // Handle error
         }
     }
 

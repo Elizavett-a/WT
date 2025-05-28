@@ -1,8 +1,8 @@
 <?php
-// Загрузка ядра приложения
-$app = require_once __DIR__ . '/../app/Bootstrap.php';
+declare(strict_types=1);
 
-// Инициализация и запуск маршрутизатора
-$router = new App\Router($app['routes']);
+require __DIR__.'/../config/Routes.php';
+
+$routes = Config\Routes::getRoutes();
+$router = new App\Router($routes);
 $router->dispatch($_SERVER['REQUEST_URI'] ?? '/');
-error_log("Запрошенный URI: " . $_SERVER['REQUEST_URI']);

@@ -56,25 +56,6 @@ class BookController extends BaseController {
         $this->render('books/list.tpl', ['books' => $books]);
     }
 
-    /*public function editAction($id): void {
-        $book = $this->bookService->getBookById((int)$id);
-        $allCategories = $this->categoryRepository->findAll();
-
-        if (!$book) {
-            http_response_code(404);
-            echo 'Книга не найдена';
-            return;
-        }
-
-        $this->render('books/edit.tpl', [
-            'book' => $book,
-            'all_categories' => $allCategories,
-            'errors' => $_SESSION['form_errors'] ?? null
-        ]);
-
-        unset($_SESSION['form_errors']);
-    }*/
-
     public function editAction(int $id): void {
         $book = $this->bookService->getBookById($id);
         $allCategories = $this->categoryRepository->findAll();

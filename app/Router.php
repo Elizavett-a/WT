@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App;
 
 use App\Services\UserService;
-use App\Services\MailService;
 
 class Router {
     private const BASE_PATH = '/bookstore/public';
