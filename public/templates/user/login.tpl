@@ -39,7 +39,7 @@
             </label>
         </div>
 
-        <button type="submit" class="auth-btn">Login</button>
+        <button type="submit" class="auth-btn">Вход</button>
 
         <div class="auth-footer">
             Ещё нет аккаунта?<a class="auth-link" href="/bookstore/public/register">Регистрация</a>
