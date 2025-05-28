@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ user.username }}'s Profile</title>
+    <title>Профиль пользователя {{ user.username }}</title>
 </head>
 <body>
 <div class="user-details">
