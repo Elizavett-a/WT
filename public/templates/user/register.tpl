@@ -51,7 +51,7 @@
         <button type="submit" class="auth-btn">Регистрация</button>
 
         <div class="auth-footer">
-            Уже есть аккаунт? <a class="auth-link" href="/bookstore/public/login">Login</a>
+            Уже есть аккаунт? <a class="auth-link" href="/bookstore/public/login">Войти</a>
         </div>
     </form>
 </div>
