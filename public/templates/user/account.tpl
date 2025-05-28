@@ -10,15 +10,15 @@
         <span class="user-email">Email: {{ user.email }}</span>
         <span class="user-verified">
             {% if user.is_verified %}
-                Verified: Yes
+                Почта подтверждена
             {% else %}
-                Verified: No
+                Почта не подтверждена
             {% endif %}
         </span>
 
         {% if user.books %}
         <div class="books-list">
-            <h4>Books:</h4>
+            <h4>Книги:</h4>
             {% for book in user.books %}
             <a href="/bookstore/public/books/view/{{ book.id }}" class="book-tag">{{ book.title }}</a>
             {% endfor %}
