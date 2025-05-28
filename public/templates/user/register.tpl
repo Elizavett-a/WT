@@ -7,7 +7,7 @@
 <body>
 <div class="auth-container">
     <div class="auth-header">
-        <h1 class="auth-title">Register</h1>
+        <h1 class="auth-title">Регистрация</h1>
     </div>
 
     {% if error %}
@@ -16,7 +16,7 @@
 
     <form class="auth-form" id="register-form" action="/bookstore/public/register/post" method="post">
         <div class="form-group">
-            <label class="form-label" for="register-name">Username</label>
+            <label class="form-label" for="register-name">Имя</label>
             <input class="form-input" type="text" id="register-name" name="name" required>
             <div class="error-message" id="register-name-error"></div>
         </div>
@@ -28,13 +28,13 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="register-password">Password</label>
+            <label class="form-label" for="register-password">Пароль</label>
             <input class="form-input" type="password" id="register-password" name="password" required>
             <div class="error-message" id="register-password-error"></div>
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="register-confirm-password">Confirm Password</label>
+            <label class="form-label" for="register-confirm-password">Пароль ещё раз</label>
             <input class="form-input" type="password" id="register-confirm-password" name="confirm_password" required>
             <div class="error-message" id="register-confirm-password-error"></div>
         </div>
@@ -48,10 +48,10 @@
         <input type="hidden" name="hashed_password" id="hashed_password">
         <input type="hidden" name="salt" id="salt">
 
-        <button type="submit" class="auth-btn">Register</button>
+        <button type="submit" class="auth-btn">Регистрация</button>
 
         <div class="auth-footer">
-            Already have an account? <a class="auth-link" href="/bookstore/public/login">Login</a>
+            Уже есть аккаунт? <a class="auth-link" href="/bookstore/public/login">Login</a>
         </div>
     </form>
 </div>
