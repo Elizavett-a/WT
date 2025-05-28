@@ -7,7 +7,7 @@
 <body>
 <div class="auth-container">
     <div class="auth-header">
-        <h1 class="auth-title">Login to System</h1>
+        <h1 class="auth-title">Вход</h1>
     </div>
 
     {% if error %}
@@ -16,13 +16,13 @@
 
     <form class="auth-form" id="login-form" action="/bookstore/public/login/post" method="post">
         <div class="form-group">
-            <label class="form-label" for="login-username">Username</label>
+            <label class="form-label" for="login-username">Имя</label>
             <input class="form-input" type="text" id="login-username" name="username" required value="{{ username ?? '' }}">
             <div class="error-message" id="login-username-error"></div>
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="login-password">Password</label>
+            <label class="form-label" for="login-password">Пароль</label>
             <input class="form-input" type="password" id="login-password" name="password" required>
             <div class="error-message" id="login-password-error"></div>
         </div>
@@ -35,14 +35,14 @@
 
         <div class="form-group">
             <label>
-                <input type="checkbox" name="remember_me"> Remember Me
+                <input type="checkbox" name="remember_me"> Запомнить меня
             </label>
         </div>
 
         <button type="submit" class="auth-btn">Login</button>
 
         <div class="auth-footer">
-            Don't have an account? <a class="auth-link" href="/bookstore/public/register">Register</a>
+            Ещё нет аккаунта?<a class="auth-link" href="/bookstore/public/register">Регистрация</a>
         </div>
     </form>
 </div>
