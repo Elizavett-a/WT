@@ -1,83 +1,173 @@
 <?php
+declare(strict_types=1);
+
 namespace App;
 
-class Router {
-    private array $routes;
+use App\Services\UserService;
+use App\Services\MailService;
 
-    public function __construct(array $routes) {
+class Router {
+    private const BASE_PATH = '/bookstore/public';
+    private const CONTROLLER_NAMESPACE = "App\\Controllers\\";
+    private const DATABASE_CONFIG_PATH = __DIR__ . '/../config/Database.php';
+
+    private const PARAM_PATTERN = '/\\\{(\w+)(?::(.+?))?\\\}/';
+
+    private array $routes;
+    private UserService $userService;
+
+    public function __construct(array $routes, UserService $userService) {
         $this->routes = $routes;
+        $this->userService = $userService;
     }
 
     public function dispatch(string $uri): void {
-        // Нормализация URI
+        if (isset($_COOKIE['remember_token']) && !isset($_SESSION['user'])) {
+            $user = $this->userService->validateRememberToken($_COOKIE['remember_token']);
+            if ($user) {
+                $_SESSION['user'] = [
+                    'id' => $user->getId(),
+                    'username' => $user->getUsername(),
+                    'email' => $user->getEmail()
+                ];
+            }
+        }
+
         $uri = $this->normalizeUri($uri);
-        error_log("Processing URI: " . $uri);
 
         foreach ($this->routes as $pattern => $route) {
-            // Динамические параметры типа {id}
-            if (str_contains($pattern, '{id}')) {
-                $basePattern = str_replace('/{id}', '', $pattern);
-                if (str_starts_with($uri, $basePattern.'/')) {
-                    $id = substr($uri, strlen($basePattern) + 1);
-                    if (is_numeric($id)) {
-                        $this->executeControllerAction($route, $id);
-                        return;
-                    }
-                }
-            }
-
-            // Точное совпадение
-            $normalizedPattern = $this->normalizeUri($pattern);
-            if ($uri === $normalizedPattern) {
-                $this->executeControllerAction($route);
+            if ($this->matchRoute($pattern, $uri, $route)) {
                 return;
             }
         }
 
-        http_response_code(404);
-        error_log("No route found for: " . $uri);
-        echo '404 Not Found - No matching route for: '.htmlspecialchars($uri);
+        $this->sendNotFoundResponse($uri);
+    }
+
+    private function matchRoute(string $pattern, string $uri, array $route): bool {
+        $regex = $this->patternToRegex($pattern);
+
+        if (preg_match($regex, $uri, $matches)) {
+            $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+            $this->executeControllerAction($route, $params);
+            return true;
+        }
+
+        return false;
+    }
+
+    private function patternToRegex(string $pattern): string {
+        $pattern = preg_quote($this->normalizeUri($pattern), '/');
+        $pattern = preg_replace_callback(
+            self::PARAM_PATTERN,
+            fn($m) => '(?<'.$m[1].'>'.($m[2] ?? '[^/]+').')',
+            $pattern
+        );
+        return '@^'.$pattern.'$@D';
     }
 
     private function normalizeUri(string $uri): string {
-        // Удаляем базовый путь если он есть
-        $basePath = '/bookstore/public';
-        $path = parse_url($uri, PHP_URL_PATH);
+        $path = parse_url(rawurldecode($uri), PHP_URL_PATH);
 
-        // Если путь начинается с basePath
-        if (str_starts_with($path, $basePath)) {
-            $path = substr($path, strlen($basePath));
+        if (str_starts_with($path, self::BASE_PATH)) {
+            $path = substr($path, strlen(self::BASE_PATH));
         }
 
-        return '/' . trim($path, '/');
+        return '/' . trim(urldecode($path), '/');
     }
 
-    private function executeControllerAction(array $route, $id = null): void {
+    private function executeControllerAction(array $route, array $params): void {
         try {
-            $controllerName = "App\\Controllers\\" . $route['controller'];
-            $action = $route['action'];
+            $controllerName = self::CONTROLLER_NAMESPACE . $route['controller'];
+            $this->validateController($controllerName, $route['action']);
 
-            if (!class_exists($controllerName)) {
-                throw new \RuntimeException("Controller $controllerName not found");
-            }
-
-            if (!method_exists($controllerName, $action)) {
-                throw new \RuntimeException("Action $action not found in $controllerName");
-            }
-
-            $controller = new $controllerName(
-                new \App\Services\BookService(new \App\Repositories\BookRepository(
-                    new \App\Database\EntityManager(require __DIR__ . '/../config/Database.php')
-                )),
-                new \App\Services\TemplateEngine()
-            );
-
-            $id !== null ? $controller->$action((int)$id) : $controller->$action();
+            $controller = $this->createController($controllerName);
+            $this->invokeControllerAction($controller, $controllerName, $route['action'], $params);
 
         } catch (\Exception $e) {
-            error_log("Controller error: " . $e->getMessage());
-            http_response_code(500);
-            echo '500 Server Error - '.htmlspecialchars($e->getMessage());
+            $this->handleControllerError($e);
         }
+    }
+
+    private function validateController(string $controllerName, string $action): void {
+        if (!class_exists($controllerName)) {
+            throw new \RuntimeException("Controller $controllerName not found");
+        }
+
+        if (!method_exists($controllerName, $action)) {
+            throw new \RuntimeException("Action $action not found in $controllerName");
+        }
+    }
+
+    private function createController(string $controllerName) {
+        $templateEngine = new TemplateEngine();
+        $entityManager = new Database\EntityManager(require self::DATABASE_CONFIG_PATH);
+        
+
+        switch ($controllerName) {
+            case self::CONTROLLER_NAMESPACE . 'AdminController':
+                $adminService = new Services\AdminService();
+                return new $controllerName($templateEngine, $adminService);
+
+            case self::CONTROLLER_NAMESPACE . 'UserController':
+                $userService = new Services\UserService(
+                    new Repositories\UserRepository($entityManager)
+                );
+                $mailService = new Services\MailService();      
+                return new $controllerName($templateEngine, $userService, $mailService);
+
+            case self::CONTROLLER_NAMESPACE . 'BookController':
+                $bookService = new Services\BookService(
+                    new Repositories\BookRepository($entityManager)
+                );
+                return new $controllerName($templateEngine, $bookService);
+
+            default:
+                throw new \RuntimeException("Unknown controller type");
+        }
+    }
+
+    private function invokeControllerAction(
+        $controller,
+        string $controllerName,
+        string $action,
+        array $params
+    ): void {
+        $method = new \ReflectionMethod($controllerName, $action);
+        $args = $this->prepareMethodArguments($method, $params);
+        $method->invokeArgs($controller, $args);
+    }
+
+    private function prepareMethodArguments(\ReflectionMethod $method, array $params): array {
+        $args = [];
+
+        foreach ($method->getParameters() as $param) {
+            $paramName = $param->getName();
+
+            if ($paramName === 'id' && isset($params['id'])) {
+                $args[] = (int)$params['id'];
+            } elseif ($paramName === 'token' && isset($params['token'])) {
+                $args[] = $params['token'];
+            } elseif (isset($params[$paramName])) {
+                $args[] = $params[$paramName];
+            } elseif ($param->isDefaultValueAvailable()) {
+                $args[] = $param->getDefaultValue();
+            } else {
+                throw new \RuntimeException("Missing required parameter: $paramName");
+            }
+        }
+
+        return $args;
+    }
+
+    private function sendNotFoundResponse(string $uri): void {
+        http_response_code(404);
+        echo '404 Not Found - No matching route for: '.htmlspecialchars($uri);
+    }
+
+    private function handleControllerError(\Exception $e): void {
+        error_log("Controller error: " . $e->getMessage());
+        http_response_code(500);
+        echo '500 Server Error - '.htmlspecialchars($e->getMessage());
     }
 }

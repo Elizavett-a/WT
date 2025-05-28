@@ -1,340 +1,142 @@
 <?php
+declare(strict_types = 1);
+
 namespace App\Controllers;
 
-use App\Services\TemplateEngine;
+require_once __DIR__ . '/BaseController.php';
 
-class AdminController extends BaseController {
-    private string $basePath;
-    private array $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'css', 'js', 'tpl', 'html', 'htm', 'txt', 'php'];
-    private array $allowedDirectories = ['assets', 'templates'];
+use App\Services\AdminService;
+use App\TemplateEngine;
+use JetBrains\PhpStorm\NoReturn;
 
-    public function __construct(TemplateEngine $templateEngine) {
-        parent::__construct($templateEngine);
-        $this->basePath = realpath(__DIR__ . '/../../public');
+class AdminController extends BaseController
+{
+    private AdminService $adminService;
+
+    public function __construct(TemplateEngine $engine, AdminService $adminService)
+    {
+        parent::__construct($engine);
+        $this->adminService = $adminService;
     }
 
-    public function listAction($path = null): void
+    public function fileViewAction(string $path): void
     {
         try {
-            $requestedPath = $path ?? $_GET['path'] ?? '';
-            $fullPath = $this->getValidatedPath($requestedPath);
+            $fullPath = $this->adminService->getSafePath($path);
 
-            $this->render('admin/filemanager.tpl', [
-                'currentPath' => $this->getRelativePath($fullPath),
-                'items' => $this->getDirectoryItems($fullPath),
-                'isEditMode' => false
-            ]);
-        } catch (\RuntimeException $e) {
-            $this->showError($e->getMessage());
-        }
-    }
-
-    private function getRelativePath(string $fullPath): string
-    {
-        return ltrim(str_replace($this->basePath, '', $fullPath), '/');
-    }
-
-    private function getDirectoryItems(string $path): array
-    {
-        if (!is_readable($path)) {
-            throw new \RuntimeException("Нет прав на чтение директории");
-        }
-
-        $items = [];
-
-        // Добавляем переход на уровень выше
-        if ($path !== $this->basePath) {
-            $parentPath = dirname($path);
-            $items[] = [
-                'name' => '..',
-                'path' => $this->getRelativePath($parentPath),
-                'is_dir' => true,
-                'size' => '-',
-                'modified' => '-'
-            ];
-        }
-
-        // Сканируем директорию
-        $scanResult = scandir($path);
-        if ($scanResult === false) {
-            throw new \RuntimeException("Ошибка чтения директории");
-        }
-
-        foreach ($scanResult as $item) {
-            if ($item === '.' || $item === '..') continue;
-
-            $itemPath = $path . '/' . $item;
-
-            $items[] = [
-                'name' => $item,
-                'path' => $this->getRelativePath($itemPath),
-                'is_dir' => is_dir($itemPath),
-                'size' => is_dir($itemPath) ? '-' : $this->formatFileSize(filesize($itemPath)),
-                'modified' => date("Y-m-d H:i:s", filemtime($itemPath)),
-                'readable' => is_readable($itemPath),
-                'writable' => is_writable($itemPath)
-            ];
-        }
-
-        return $items;
-    }
-    private function getValidatedPath(string $relativePath): string
-    {
-        $fullPath = realpath($this->basePath . '/' . ltrim($relativePath, '/'));
-
-        if ($fullPath === false) {
-            throw new \RuntimeException("Указанный путь не существует");
-        }
-
-        if (!str_starts_with($fullPath, $this->basePath)) {
-            throw new \RuntimeException("Доступ за пределы корневой директории запрещен");
-        }
-
-        return $fullPath;
-    }
-    public function viewAction($id = null): void {
-        try {
-            // Если $id передан, используем его для формирования пути
-            $filePath = $id ? $this->basePath . '/' . ltrim($id, '/') : $this->getRequestedPath();
-
-            if (!$this->checkPathAccess($filePath)) {
-                $this->showError("Недостаточно прав для доступа к этому файлу");
-                return;
-            }
-
-            if (!file_exists($filePath) || is_dir($filePath)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Файл не найден', 'error');
-                return;
-            }
-
-            if (!$this->isTextFile($filePath)) {
-                $this->downloadFile($filePath);
-                return;
-            }
-
-            if (!is_readable($filePath)) {
-                $this->showError("Нет прав на чтение файла");
-                return;
-            }
-
-            $content = file_get_contents($filePath);
-            $this->render('admin/filemanager.tpl', [
-                'fileContent' => $content,
-                'currentPath' => $this->getRelativePath($filePath),
-                'isEditMode' => true
-            ]);
-        } catch (\Exception $e) {
-            $this->showError($e->getMessage());
-        }
-    }
-
-    public function editAction(): void {
-        try {
-            $filePath = $this->getRequestedPath();
-
-            if (!$this->checkPathAccess($filePath)) {
-                $this->showError("Недостаточно прав для редактирования файла");
-                return;
-            }
-
-            if (!is_writable($filePath)) {
-                $this->redirectWithMessage(
-                    '/bookstore/public/admin/view?path=' . urlencode($this->getRelativePath($filePath)),
-                    'Нет прав на запись в файл',
-                    'error'
-                );
-                return;
-            }
-
-            file_put_contents($filePath, $_POST['content']);
-            $this->redirectWithMessage(
-                '/bookstore/public/admin/view?path=' . urlencode($this->getRelativePath($filePath)),
-                'Файл успешно сохранен',
-                'success'
-            );
-        } catch (\Exception $e) {
-            $this->showError($e->getMessage());
-        }
-    }
-
-    public function deleteAction(): void {
-        try {
-            $path = $this->getRequestedPath();
-
-            if (!$this->checkPathAccess($path)) {
-                $this->showError("Недостаточно прав для удаления");
-                return;
-            }
-
-            if (!is_writable(dirname($path))) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Нет прав на удаление', 'error');
-                return;
-            }
-
-            if (is_dir($path)) {
-                if (!@rmdir($path)) {
-                    $this->redirectWithMessage('/bookstore/public/admin', 'Не удалось удалить директорию (возможно, она не пуста)', 'error');
-                    return;
-                }
+            if (is_dir($fullPath)) {
+                $this->showDirectory($fullPath, $path);
             } else {
-                if (!@unlink($path)) {
-                    $this->redirectWithMessage('/bookstore/public/admin', 'Не удалось удалить файл', 'error');
-                    return;
-                }
+                $this->showFile($fullPath, $path);
             }
-
-            $this->redirectWithMessage('/bookstore/public/admin', 'Удаление выполнено успешно', 'success');
-        } catch (\Exception $e) {
-            $this->showError($e->getMessage());
+        } catch (\Throwable $e) {
+            // Handle error
         }
     }
 
-    public function uploadAction(): void {
+    public function createFileAction(): void
+    {
         try {
-            $targetDir = $this->getRequestedPath();
-
-            if (!$this->checkPathAccess($targetDir)) {
-                $this->showError("Недостаточно прав для загрузки файлов");
-                return;
-            }
-
-            if (!is_writable($targetDir)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Нет прав на запись в директорию', 'error');
-                return;
-            }
-
-            if (empty($_FILES['file']['tmp_name'])) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Файл не был загружен', 'error');
-                return;
-            }
-
-            $targetFile = $targetDir . '/' . basename($_FILES['file']['name']);
-
-            if (file_exists($targetFile)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Файл с таким именем уже существует', 'error');
-                return;
-            }
-
-            if (move_uploaded_file($_FILES['file']['tmp_name'], $targetFile)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Файл успешно загружен', 'success');
-            } else {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Ошибка при загрузке файла', 'error');
-            }
-        } catch (\Exception $e) {
-            $this->showError($e->getMessage());
+            $name = $_POST['name'] ?? null;
+            $this->adminService->createFile($name);
+            $this->jsonResponse(['success' => true]);
+        } catch (\Throwable $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()]);
         }
     }
 
-    public function createFolderAction(): void {
+    public function deleteAction(string $path): void
+    {
         try {
-            $path = $this->getRequestedPath();
-
-            if (!$this->checkPathAccess($path)) {
-                $this->showError("Недостаточно прав для создания директории");
-                return;
-            }
-
-            if (!is_writable($path)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Нет прав на создание директории', 'error');
-                return;
-            }
-
-            $folderName = trim($_POST['folder_name']);
-            if (empty($folderName)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Имя директории не может быть пустым', 'error');
-                return;
-            }
-
-            if (!preg_match('/^[a-zA-Z0-9_-]+$/', $folderName)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Недопустимое имя директории', 'error');
-                return;
-            }
-
-            $newPath = $path . '/' . $folderName;
-
-            if (file_exists($newPath)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Директория уже существует', 'error');
-                return;
-            }
-
-            if (!mkdir($newPath, 0755)) {
-                $this->redirectWithMessage('/bookstore/public/admin', 'Не удалось создать директорию', 'error');
-                return;
-            }
-
-            $this->redirectWithMessage('/bookstore/public/admin', 'Директория успешно создана', 'success');
-        } catch (\Exception $e) {
-            $this->showError($e->getMessage());
-        }
-    }
-
-    private function getRequestedPath(): string {
-        $requestPath = $_GET['path'] ?? '';
-        $fullPath = $this->basePath . '/' . ltrim($requestPath, '/');
-        $fullPath = realpath($fullPath) ?: $this->basePath;
-
-        // Проверяем, что путь находится в разрешенных директориях
-        foreach ($this->allowedDirectories as $allowedDir) {
-            if (str_starts_with($fullPath, $this->basePath . '/' . $allowedDir)) {
-                return $fullPath;
-            }
+            $this->adminService->delete($path);
+        } catch (\Throwable $e) {
+            exit;
         }
 
-        return $this->basePath;
-    }
-
-    private function checkPathAccess(string $path): bool {
-        // Проверка, что путь находится внутри базового пути
-        if (!str_starts_with($path, $this->basePath)) {
-            return false;
-        }
-
-        // Проверка разрешенных директорий
-        foreach ($this->allowedDirectories as $allowedDir) {
-            if (str_starts_with($path, $this->basePath . '/' . $allowedDir)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isTextFile(string $filePath): bool {
-        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-        return in_array($extension, $this->allowedExtensions);
-    }
-
-    private function formatFileSize(int $bytes): string {
-        if ($bytes < 1024) return $bytes . ' B';
-        elseif ($bytes < 1048576) return round($bytes / 1024, 2) . ' KB';
-        else return round($bytes / 1048576, 2) . ' MB';
-    }
-
-    private function downloadFile(string $filePath): void {
-        if (!is_readable($filePath)) {
-            $this->showError("Нет прав на чтение файла");
-            return;
-        }
-
-        header('Content-Description: File Transfer');
-        header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="'.basename($filePath).'"');
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . filesize($filePath));
-        readfile($filePath);
+        $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/bookstore/public/admin';
+        header("Location: " . $redirectUrl);
         exit;
     }
 
-    private function redirectWithMessage(string $url, string $message, string $type = 'info'): void {
-        header("Location: $url?message=" . urlencode($message) . "&message_type=$type");
-        exit;
+    public function createDirectoryAction(): void
+    {
+        try {
+            $name = $_POST['name'] ?? null;
+            $this->adminService->createDirectory($name);
+            $this->jsonResponse(['success' => true]);
+        } catch (\Throwable $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()]);
+        }
     }
 
-    private function showError(string $message): void {
-        $this->render('admin/error.tpl', [
-            'error_message' => $message
+    public function indexAction(): void
+    {
+        $this->render('admin/file_manager.tpl');
+    }
+
+    public function listAction(): void
+    {
+        try {
+            $requestedDir = $_GET['dir'] ?? '';
+            $currentDir = $this->adminService->getSafePath($requestedDir);
+
+            $files = $this->adminService->scanDirectory($currentDir);
+
+            $this->render('admin/file_manager.tpl', [
+                'currentDir' => $requestedDir,
+                'files' => $files,
+            ]);
+        } catch (\Throwable $e) {
+            // Handle error
+        }
+    }
+
+    public function updateAction(): void
+    {
+        try {
+            $path = $_POST['path'] ?? '';
+            $content = $_POST['content'] ?? null;
+            $newName = $_POST['name'] ?? null;
+
+            $this->adminService->updateFile($path, $content, $newName);
+            $this->jsonResponse(['success' => true]);
+        } catch (\Throwable $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    private function showDirectory(string $fullPath, string $relativePath): void
+    {
+        $files = $this->adminService->scanDirectory($fullPath);
+
+        $this->render('admin/file_manager.tpl', [
+            'currentDir' => $relativePath ?: '/',
+            'files' => $files,
         ]);
+    }
+
+    private function showFile(string $fullPath, string $relativePath): void
+    {
+        $content = $this->adminService->getFileContent($relativePath);
+
+        $this->render('admin/file_view.tpl', [
+            'content' => htmlspecialchars($content),
+            'backUrl' => '/admin/view/' . dirname($relativePath)
+        ]);
+    }
+
+    #[NoReturn]
+    private function jsonResponse(array $data): void
+    {
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
+    }
+
+    #[NoReturn]
+    private function redirectToDirectory(string $path): void
+    {
+        header("Location: /admin/files?dir=" . $path);
+        exit;
     }
 }

@@ -1,9 +1,11 @@
 <?php
+declare(strict_types = 1);
+
 namespace App\Controllers;
 
-require_once __DIR__.'/../Services/TemplateEngine.php';
+require_once __DIR__.'/../TemplateEngine.php';
 
-use App\Services\TemplateEngine;
+use App\TemplateEngine;
 
 abstract class BaseController {
     protected TemplateEngine $templateEngine;
@@ -15,7 +17,4 @@ abstract class BaseController {
     protected function render(string $template, array $data = []): void {
         echo $this->templateEngine->render($template, $data);
     }
-
-    abstract public function listAction();
-    abstract public function viewAction($id);
 }
